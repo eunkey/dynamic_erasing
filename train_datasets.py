@@ -9,7 +9,7 @@ import random
 nltk.download('punkt')
 from nltk.tokenize import sent_tokenize
 
-class CustomDataset(Dataset):
+class CustomDataset(torch.utils.data.Dataset):
     def __init__(self, dataset_name, dataset_type, tokenizer):
         self.original_dataset = load_dataset(dataset_name)[dataset_type]
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer)
@@ -17,9 +17,7 @@ class CustomDataset(Dataset):
             self.dataset = self._process_squad()
         
     def _process_squad(self):
-        self.input_ids_list = []
-        self.attention_mask_list = []
-        self.labels_list = []
+        dataset = []
         
         for i in range(len(self.original_dataset)):
             input_ids = self.tokenizer("Question: "+self.original_dataset[i]["question"]+"\nContext: ", return_tensors="pt").input_ids
@@ -59,15 +57,13 @@ class CustomDataset(Dataset):
             labels = input_ids.clone()
             
             
-            self.input_ids_list.append(input_ids)
-            self.attention_mask_list.append(attention_mask)
-            self.labels_list.append(labels)
+            dataset.append([input_ids, attention_mask, labels])
         
-        return [self.input_ids_list, self.attention_mask_list, self.labels_list]
+        return dataset
         
     
     def __len__(self):
-        return len(self.labels_list)
+        return len(self.dataset)
 
     def __getitem__(self, idx):
         input_ids, attention_mask, labels= self.dataset[idx]
